@@ -17,9 +17,9 @@ limitations under the License.
 #endregion
 
 
+using Amdocs.Ginger.Plugin.Core;
 using Amdocs.Ginger.Plugin.Core.Database;
 using Amdocs.Ginger.Plugin.Core.Reporter;
-
 using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
@@ -29,6 +29,7 @@ using System.Linq;
 
 namespace MySQLDatabase
 {
+    [GingerService("MySQLService", "MySQL Database service")]
     public class MYSQLDBConnection : IDatabase
     {
         private DbConnection oConn = null;
@@ -37,16 +38,17 @@ namespace MySQLDatabase
         private IReporter mReporter;
         public string Name => throw new NotImplementedException();
 
-        public string ConnectionString { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        string mConnectionString;
+        public string ConnectionString { get => mConnectionString; set => mConnectionString = value; }
 
         public bool OpenConnection(Dictionary<string, string> parameters)
         {
             KeyvalParamatersList = parameters;
-            string connectConnectionString = GetConnectionString(parameters);
+            // string connectConnectionString = GetConnectionString(parameters);
             try
             {
                 oConn = new MySqlConnection();
-                oConn.ConnectionString = connectConnectionString;
+                oConn.ConnectionString = ConnectionString; // connectConnectionString;
                 oConn.Open();
 
                 if ((oConn != null) && (oConn.State == ConnectionState.Open))
@@ -56,7 +58,8 @@ namespace MySQLDatabase
             }
             catch (Exception ex)
             {
-                mReporter.ToLog2(eLogLevel.ERROR, "DB connection failed, Connection String =" + connectConnectionString, ex);
+            // FIXME check null and init mReporter of DB
+                // mReporter.ToLog2(eLogLevel.ERROR, "DB connection failed, Connection String =" + connectConnectionString, ex);
                 throw (ex);
             }
             return false;
@@ -121,66 +124,18 @@ namespace MySQLDatabase
 
         public DataTable DBQuery(string Query)
         {
-            
-            List<string> Headers = new List<string>();
-            List<List<string>> Records = new List<List<string>>();
-            bool IsConnected = false;
-            List<object> ReturnList = new List<object>();
-            DataTable dataTable = new DataTable();
-            DbDataReader reader = null;
-            try
+            MySqlCommand _cmd = new MySqlCommand
             {
-                if (oConn == null)
-                {
-                    IsConnected = OpenConnection(KeyvalParamatersList);
-                }
-                if (IsConnected || oConn != null)
-                {
-                    DbCommand command = oConn.CreateCommand();
-                    command.CommandText = Query;
-                    command.CommandType = CommandType.Text;
-
-                    // Retrieve the data.
-                    reader = command.ExecuteReader();
-
-                    // Create columns headers
-                    for (int i = 0; i < reader.FieldCount; i++)
-                    {
-                        Headers.Add(reader.GetName(i));
-                        dataTable.Columns.Add(reader.GetName(i));
-                    }
-
-                    while (reader.Read())
-                    {
-
-                        List<string> record = new List<string>();
-                        for (int i = 0; i < reader.FieldCount; i++)
-                        {
-                            record.Add(reader[i].ToString());
-                        }
-                        Records.Add(record);
-                        dataTable.Rows.Add(record);
-                    }
-
-                    ReturnList.Add(Headers);
-                    ReturnList.Add(Records);
-                }
-            }
-            catch (Exception e)
-            {
-                mReporter.ToLog2(eLogLevel.ERROR, "Failed to execute query:" + Query, e);
-                throw e;
-            }
-            finally
-            {
-                if (reader != null)
-                {
-                    reader.Close();
-                }
-            }
-
-            return dataTable;
+                Connection = (MySqlConnection)oConn,
+                CommandText = Query
+            };
+            _cmd.ExecuteNonQuery();
+            MySqlDataAdapter _da = new MySqlDataAdapter(_cmd);
+            DataTable results = new DataTable();
+            _da.Fill(results);            
+            return results;
         }
+
 
         public int GetRecordCount(string Query)
         {
@@ -340,7 +295,20 @@ namespace MySQLDatabase
 
         public bool TestConnection()
         {
-            throw new NotImplementedException();
+            oConn = new MySqlConnection();
+            oConn.ConnectionString = "Server=127.0.0.1;Database=sys;Uid=root;Pwd = Hello!12345";   // !!!!!!!!!!!!!!!
+            oConn.Open();
+
+            if (oConn.State == ConnectionState.Open)
+            {
+                oConn.Close();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+
         }
 
         public void InitReporter(IReporter reporter)

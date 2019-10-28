@@ -1,0 +1,8 @@
+{
+  "Id": "MySQLDatabasePlugin",
+  "Version": "1.0.0",
+  "ProjectUrl": "git\\Pluginex1...",
+  "Description": "MySQL Database Plugin",
+  "Summary": "MySQL Database Plugin",
+  "StartupDll": "GingerMySQLDatabase.dll"
+}

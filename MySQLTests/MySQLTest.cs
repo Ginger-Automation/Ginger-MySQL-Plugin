@@ -24,7 +24,7 @@ using System.Data;
 
 namespace MySQLTests
 {
-    [Ignore]
+ 
     [TestClass]
     public class MySQLTest
     {
@@ -75,7 +75,7 @@ namespace MySQLTests
         {
             //Arrange
             List<string> Columns = null;
-            string tablename = "authors";
+            string tablename = "tbcustomers";
 
             //Act
             Columns = db.GetTablesColumns(tablename);
@@ -121,7 +121,7 @@ namespace MySQLTests
             DataTable result = null;
 
             //Act
-            result = db.DBQuery("SELECT * FROM authors");
+            result = db.DBQuery("SELECT * FROM tbcustomers");
 
             //Assert
             Assert.AreEqual(result.Rows.Count, 3);
