@@ -296,7 +296,7 @@ namespace MySQLDatabase
         public bool TestConnection()
         {
             oConn = new MySqlConnection();
-            oConn.ConnectionString = "Server=127.0.0.1;Database=sys;Uid=root;Pwd = Hello!12345";   // !!!!!!!!!!!!!!!
+            oConn.ConnectionString = ConnectionString;
             oConn.Open();
 
             if (oConn.State == ConnectionState.Open)
