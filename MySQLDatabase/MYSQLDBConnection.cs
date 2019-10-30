@@ -35,9 +35,8 @@ namespace MySQLDatabase
         private MySqlConnection mMySqlConnection = null;
         private DbTransaction tran = null;
 
-
         private IReporter mReporter;
-        public string Name => throw new NotImplementedException();
+        
 
         // [Mandatory]
         [DatabaseParam("Server")]
