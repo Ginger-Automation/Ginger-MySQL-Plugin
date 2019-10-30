@@ -32,36 +32,42 @@ namespace MySQLTests
 
         [ClassInitialize]
         public static void ClassInit(TestContext context)
-        {
-            Dictionary<string, string> param = new Dictionary<string, string>();
-            param.Add("ConnectionString", "Server=127.0.0.1;Database=sys;Uid=root;Pwd = Hello!12345");
-            db.KeyvalParamatersList = param;
-            Boolean testconn = db.OpenConnection(param);
+        {            
+            db.Server = "127.0.0.1";
+            db.Database = "sys";
+            db.Uid = "root";
+            db.Pwd = "Hello!12345";
 
+            db.OpenConnection();
         }
 
-        [TestMethod]
-        public void OpenConnection()
+        [ClassCleanup]
+        public static void ClassCleanup()
         {
-            //Arrange
-            Dictionary<string, string> param = new Dictionary<string, string>();
-            param.Add("ConnectionString", "Server=127.0.0.1;Database=sys;Uid=root;Pwd = Hello!12345");
-
-            //Act
-            Boolean testconn = db.OpenConnection(param);
-
-            //Assert
-            Assert.IsTrue(testconn);
+            db.CloseConnection();
         }
+
+        [TestInitialize]
+        public void TestInitialize()
+        {
+            
+        }
+
+        [TestCleanup]
+        public void TestCleanUp()
+        {
+            
+        }
+
+        
 
         [TestMethod]
         public void GetTableList()
         {
-            //Arrange
-            List<string> Tables = null;
+            //Arrange                        
 
             //Act
-            Tables = db.GetTablesList();
+            List<string> Tables = db.GetTablesList();
 
             //Assert
             Assert.AreEqual(4, Tables.Count);
@@ -73,12 +79,11 @@ namespace MySQLTests
         [TestMethod]
         public void GetTablesColumns()
         {
-            //Arrange
-            List<string> Columns = null;
+            //Arrange            
             string tablename = "tbcustomers";
 
             //Act
-            Columns = db.GetTablesColumns(tablename);
+            List<string> Columns = db.GetTablesColumns(tablename);
 
             //Assert
             Assert.AreEqual(4, Columns.Count);
@@ -92,52 +97,28 @@ namespace MySQLTests
         {
             //Arrange
             string upadateCommand = "UPDATE authors SET email='aaa@aa.com' where id=3";
-            string result = null;
-
+            
             //Act
-            result = db.RunUpdateCommand(upadateCommand, false);
+            string result = db.RunUpdateCommand(upadateCommand, false);
 
             //Assert
             Assert.AreEqual(result, "1");
         }
 
-        [TestMethod]
-        public void GetSingleValue()
-        {
-            //Arrange
-            string result = null;
-
-            //Act
-            result = db.GetSingleValue("authors", "name", "id=2");
-            
-            //Assert
-            Assert.AreEqual(result, "Priya");
-        }
+        
 
         [TestMethod]
-        public void DBQuery()
+        public void ExecuteQuery()
         {
-            //Arrange
-            DataTable result = null;
+            //Arrange            
 
             //Act
-            result = db.DBQuery("SELECT * FROM tbcustomers");
+            DataTable result = (DataTable)db.ExecuteQuery("SELECT * FROM tbcustomers");
 
             //Assert
             Assert.AreEqual(result.Rows.Count, 3);
         }
 
-        [TestMethod]
-        public void GetRecordCount()
-        {
-            //Arrange
-            int a = 0;
-
-            //Act
-            a = db.GetRecordCount("authors");
-
-            //Assert
-            Assert.AreEqual(a, 3);
-        }
+        
     }
 }

@@ -18,7 +18,7 @@ limitations under the License.
 
 
 using Amdocs.Ginger.Plugin.Core;
-using Amdocs.Ginger.Plugin.Core.Database;
+using Amdocs.Ginger.Plugin.Core.DatabaseLib;
 using Amdocs.Ginger.Plugin.Core.Reporter;
 using MySql.Data.MySqlClient;
 using System;
@@ -32,26 +32,55 @@ namespace MySQLDatabase
     [GingerService("MySQLService", "MySQL Database service")]
     public class MYSQLDBConnection : IDatabase
     {
-        private DbConnection oConn = null;
+        private MySqlConnection mMySqlConnection = null;
         private DbTransaction tran = null;
-        public Dictionary<string, string> KeyvalParamatersList = new Dictionary<string, string>();
+
+
         private IReporter mReporter;
         public string Name => throw new NotImplementedException();
 
-        string mConnectionString;
-        public string ConnectionString { get => mConnectionString; set => mConnectionString = value; }
+        // [Mandatory]
+        [DatabaseParam("Server")]
+        [Default("127.0.0.1")]
+        public string Server { get; set; }
+        
+        [DatabaseParam("Database")]
+        [Default("??")]
+        public string Database { get; set; }
 
-        public bool OpenConnection(Dictionary<string, string> parameters)
+
+        [DatabaseParam("Uid")]
+        [Default("??")]
+        public string Uid { get; set; }
+
+
+        [DatabaseParam("PWD")]
+        
+        [Default("??")]
+        public string Pwd { get; set; }
+
+
+        [DatabaseParam("Port")]        
+        public int Port { get; set; }
+
+        
+        public string GetConnectionString()
         {
-            KeyvalParamatersList = parameters;
+            string ConnectionString = $"Server={Server};Database={Database};Uid={Uid};Pwd={Pwd}";
+            return ConnectionString;
+        }
+
+        public bool OpenConnection()
+        {
+            
             // string connectConnectionString = GetConnectionString(parameters);
             try
             {
-                oConn = new MySqlConnection();
-                oConn.ConnectionString = ConnectionString; // connectConnectionString;
-                oConn.Open();
+                mMySqlConnection = new MySqlConnection();
+                mMySqlConnection.ConnectionString = GetConnectionString();
+                mMySqlConnection.Open();
 
-                if ((oConn != null) && (oConn.State == ConnectionState.Open))
+                if (mMySqlConnection.State == ConnectionState.Open)
                 {
                     return true;
                 }
@@ -106,27 +135,27 @@ namespace MySQLDatabase
         {
             try
             {
-                if (oConn != null)
+                if (mMySqlConnection != null)
                 {
-                    oConn.Close();
+                    mMySqlConnection.Close();
                 }
             }
             catch (Exception e)
             {
-                mReporter.ToLog2(eLogLevel.ERROR, "Failed to close DB Connection", e);
+                mReporter.ToLog(eLogLevel.ERROR, "Failed to close DB Connection", e);
                 throw (e);
             }
             finally
             {
-                oConn?.Dispose();
+                mMySqlConnection?.Dispose();
             }
         }
 
-        public DataTable DBQuery(string Query)
+        public object ExecuteQuery(string Query)
         {
             MySqlCommand _cmd = new MySqlCommand
             {
-                Connection = (MySqlConnection)oConn,
+                Connection = (MySqlConnection)mMySqlConnection,
                 CommandText = Query
             };
             _cmd.ExecuteNonQuery();
@@ -137,83 +166,24 @@ namespace MySQLDatabase
         }
 
 
-        public int GetRecordCount(string Query)
-        {
-            string sql = "SELECT COUNT(1) FROM " + Query;
-
-            String rc = null;
-            DbDataReader reader = null;
-            
-                try
-                {
-                    DbCommand command = oConn.CreateCommand();
-                    command.CommandText = sql;
-                    command.CommandType = CommandType.Text;
-
-                    // Retrieve the data.
-                    reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        rc = reader[0].ToString();
-                        break; // We read only first row = count of records
-                    }
-                }
-                catch (Exception e)
-                {
-                    mReporter.ToLog2(eLogLevel.ERROR, "Failed to execute query:" + sql, e);
-                    throw e;
-                }
-                finally
-                {
-                    reader.Close();
-                }
-            
-            return Convert.ToInt32(rc);
-        }
-
-        public string GetSingleValue(string Table, string Column, string Where)
-        {
-            string sql = "SELECT {0} FROM {1} WHERE {2}";
-            sql = String.Format(sql, Column, Table, Where);
-            String rc = null;
-            DbDataReader reader = null;
-                try
-                {
-                    DbCommand command = oConn.CreateCommand();
-                    command.CommandText = sql;
-                    command.CommandType = CommandType.Text;
-
-                    // Retrieve the data.
-                    reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        rc = reader[0].ToString();
-                        break; // We read only first row
-                    }
-                }
-                catch (Exception e)
-                {
-                    throw e;
-                }
-                finally
-                {
-                    reader.Close();
-                }
-            
-            return rc;
-        }
+        //public string GetSingleValue(string Table, string Column, string Where)
+        //{
+        //    string sql = $"SELECT {Column} FROM {Table} WHERE {Where}";
+        //    DataTable dataTable = DBQuery(sql);
+        //    return dataTable.Rows[0][0].ToString();            
+        //}
 
         public List<string> GetTablesColumns(string table)
         {
             DbDataReader reader = null;
-            List<string> rc = new List<string>() { "" };
-            if ((oConn == null || string.IsNullOrEmpty(table)))
+            List<string> rc = new List<string>();
+            if (string.IsNullOrEmpty(table))
             {
-                return rc;
+                throw new ArgumentException("table name cannot be empty");
             }
             try
             {
-                DbCommand command = oConn.CreateCommand();
+                DbCommand command = mMySqlConnection.CreateCommand();
                 // Do select with zero records
                 command.CommandText = "select * from " + table + " where 1 = 0";
                 command.CommandType = CommandType.Text;
@@ -229,7 +199,7 @@ namespace MySQLDatabase
             }
             catch (Exception e)
             {
-                mReporter.ToLog2(eLogLevel.ERROR, "", e);
+                mReporter.ToLog(eLogLevel.ERROR, "", e);
                 throw (e);
             }
             finally
@@ -239,77 +209,89 @@ namespace MySQLDatabase
             return rc;
         }
 
-        public List<string> GetTablesList(string Name = null)
-        {
-            List<string> rc = new List<string>() { "" };
+        public List<string> GetTablesList()
+        {            
+            List<string> rc = new List<string>();
             try
             {
-                DataTable table = oConn.GetSchema("Tables");
-                string tableName = "";
-                foreach (DataRow row in table.Rows)
-                {
-                    tableName = (string)row[2];
-                    rc.Add(tableName);
+                DataTable tables = mMySqlConnection.GetSchema("Tables");                
+                foreach (DataRow row in tables.Rows)
+                {                    
+                    rc.Add((string)row[2]);
                 }
             }
             catch (Exception e)
             {
-                mReporter.ToLog2(eLogLevel.ERROR, "Failed to get table list for DB:" + this, e);
-                throw (e);
+                if (mReporter!=null)
+                {
+                    mReporter.ToLog(eLogLevel.ERROR, "Failed to get table list for DB:" + this, e);
+                }                
+                throw e;
             }
             return rc;
         }    
-        
+                
         public string RunUpdateCommand(string updateCmd, bool commit = true)
         {
             string result = "";
-                using (DbCommand command = oConn.CreateCommand())
+            using (DbCommand command = mMySqlConnection.CreateCommand())
+            {
+                try
                 {
-                    try
+                    if (commit)
                     {
-                        if (commit)
-                        {
-                            tran = oConn.BeginTransaction();
-                            // to Command object for a pending local transaction
-                            command.Connection = oConn;
-                            command.Transaction = tran;
-                        }
-                        command.CommandText = updateCmd;
-                        command.CommandType = CommandType.Text;
-
-                        result = command.ExecuteNonQuery().ToString();
-                        if (commit)
-                        {
-                            tran.Commit();
-                        }
+                        tran = mMySqlConnection.BeginTransaction();
+                        // to Command object for a pending local transaction
+                        command.Connection = mMySqlConnection;
+                        command.Transaction = tran;
                     }
-                    catch (Exception e)
+                    command.CommandText = updateCmd;
+                    command.CommandType = CommandType.Text;
+
+                    int rowsAffected = command.ExecuteNonQuery();
+                    if (commit)
+                    {
+                        tran.Commit();
+                    }
+                    return "rowsAffected=" + rowsAffected;
+                }
+                catch (Exception e)
+                {
+                    if (mReporter != null)
+                    {
+                        mReporter.ToLog(eLogLevel.ERROR, "Commit failed for:" + updateCmd, e);
+                    }
+                    throw e;
+                }
+                finally
+                {
+                    if (tran != null)
                     {
                         tran.Rollback();
-                        mReporter.ToLog2(eLogLevel.ERROR, "Commit failed for:" + updateCmd, e);
-                        throw e;
                     }
+
                 }
-            return result;
+            }
         }
 
-        public bool TestConnection()
-        {
-            oConn = new MySqlConnection();
-            oConn.ConnectionString = ConnectionString;
-            oConn.Open();
+        //public bool TestConnection()
+        //{
+        //    bool b
+        //    //mMySqlConnection = new MySqlConnection();
+        //    //mMySqlConnection.ConnectionString = ConnectionString;
+        //    //mMySqlConnection.Open();
 
-            if (oConn.State == ConnectionState.Open)
-            {
-                oConn.Close();
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+        //    //if (mMySqlConnection.State == ConnectionState.Open)
+        //    //{
+        //    //    mMySqlConnection.Close();
+        //    //    return true;
+        //    //}
+        //    //else
+        //    //{
+        //    //    return false;
+        //    //}
 
-        }
+        //}
 
         public void InitReporter(IReporter reporter)
         {
