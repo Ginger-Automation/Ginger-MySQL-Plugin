@@ -19,7 +19,7 @@ namespace MySQLDatabase
                 }
                 else
                 {                    
-                    gingerNodeStarter.StartNode("MSAccess Service 1", new MYSQLDBConnection(), SocketHelper.GetLocalHostIP(), 15001);                    
+                    gingerNodeStarter.StartNode("MSAccess Service 1", new MYSQLDatabaseService(), SocketHelper.GetLocalHostIP(), 15001);                    
                 }
                 gingerNodeStarter.Listen();
             }

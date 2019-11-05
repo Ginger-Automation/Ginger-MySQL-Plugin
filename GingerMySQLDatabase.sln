@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GingerMySQLDatabase", "MySQ
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GingerMySQLTests", "MySQLTests\GingerMySQLTests.csproj", "{BB8FBD89-BF25-4CBD-B045-44B7B17D344E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GingerPluginCore", "..\Ginger-Automation\Ginger\Ginger\GingerPluginCore\GingerPluginCore.csproj", "{807E8079-A6C6-467A-8BE0-6205728FAA62}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{BB8FBD89-BF25-4CBD-B045-44B7B17D344E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BB8FBD89-BF25-4CBD-B045-44B7B17D344E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BB8FBD89-BF25-4CBD-B045-44B7B17D344E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{807E8079-A6C6-467A-8BE0-6205728FAA62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{807E8079-A6C6-467A-8BE0-6205728FAA62}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{807E8079-A6C6-467A-8BE0-6205728FAA62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{807E8079-A6C6-467A-8BE0-6205728FAA62}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

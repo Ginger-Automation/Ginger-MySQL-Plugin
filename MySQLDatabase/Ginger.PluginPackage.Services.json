@@ -1,6 +1,6 @@
 [
   {
-    "ServiceId": "MySQLService",
+    "ServiceId": "MySQLDatabaseService",
     "Description": null,
     "IsSession": false,
     "Interfaces": [
